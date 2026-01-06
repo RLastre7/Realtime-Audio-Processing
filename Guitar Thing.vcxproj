@@ -19,13 +19,23 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AudioState.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="RingBuffer.cpp" />
+    <ClCompile Include="src\AudioState.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\RingBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AudioState.h" />
-    <ClInclude Include="RingBuffer.h" />
+    <ClInclude Include="include\AudioState.h" />
+    <ClInclude Include="include\pa_asio.h" />
+    <ClInclude Include="include\pa_jack.h" />
+    <ClInclude Include="include\pa_linux_alsa.h" />
+    <ClInclude Include="include\pa_mac_core.h" />
+    <ClInclude Include="include\pa_win_ds.h" />
+    <ClInclude Include="include\pa_win_wasapi.h" />
+    <ClInclude Include="include\pa_win_waveformat.h" />
+    <ClInclude Include="include\pa_win_wdmks.h" />
+    <ClInclude Include="include\pa_win_wmme.h" />
+    <ClInclude Include="include\portaudio.h" />
+    <ClInclude Include="include\RingBuffer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
