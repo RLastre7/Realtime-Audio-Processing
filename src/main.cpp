@@ -51,39 +51,80 @@ enum StreamType {
     OUTPUT,
 };
 
+
+static void displayVolumeBar(AudioState& audioState) {
+    //display the audio bar
+    {
+        int width = 50;
+        std::string box = "#";
+        float v = audioState.currentVolume.load(std::memory_order_relaxed);
+        //fill the bar
+        int barLength = static_cast<int>(v * width);
+        std::string bar(barLength, box[0]);
+        std::string emptyBar(width - barLength, ' ');
+        std::cout << "Volume: " << bar << emptyBar << std::endl;
+    }
+}
+
+static void printData(AudioState& audioState) {
+
+    //move cursor to line below menu
+    std::cout << "\033[6;0H";
+
+    // Clear current line
+    std::cout << "\033[K";
+
+    //volume bar
+    displayVolumeBar(audioState);
+
+    //set the recroding/playback status
+    std::string status;
+    if (audioState.recording.load(std::memory_order_relaxed)) status = "recording";
+    else if (audioState.playing.load(std::memory_order_relaxed)) status = "playing     ";
+    else status = "idle     ";
+
+    //print information 
+    std::cout << status << std::endl;
+    std::cout << "Gain: " << audioState.gain.load(std::memory_order_relaxed) << std::endl;
+
+}
+
 void UILoop(AudioState& audioState) {
     char c = ' ';
-
+    float gainChange = 0.1f;
     while (audioState.appRunning.load(std::memory_order_relaxed)) {
-
+        
+        printData(audioState);
+        
         float g = audioState.gain.load(std::memory_order_relaxed);
 
-        if (audioState.recording) std::cout << "recording       " << std::flush;
-        else if (audioState.playing) std::cout << "playing      " << std::flush;
-        else std::cout << "idle     " << std::flush;
 
-
+        //read user input
         if (_kbhit()) {
             c = _getch();
 
             switch (c) {
+                //quit
             case 'q':
                 audioState.appRunning.store(false, std::memory_order_relaxed);
                 break;
+                //increase gain
             case '+':
             case '=':
-                audioState.gain.store(g + 0.5f, std::memory_order_relaxed);
+                audioState.gain.store(g + gainChange, std::memory_order_relaxed);
                 break;
+                //decrease gain
             case '-':
             case '_':
-                audioState.gain.store(g - 0.5f, std::memory_order_relaxed);
+                audioState.gain.store(std::max(0.0f, g - gainChange), std::memory_order_relaxed);
                 break;
+                //toggle recording
             case 'r':
-                if(!audioState.recording) audioState.recordingHistory.clear();
+                if (!audioState.recording) audioState.recordingHistory.clear();
                 audioState.playing = false;
                 audioState.recording = !audioState.recording;
-
                 break;
+                //play recording
             case 'p':
                 audioState.recording = false;
                 audioState.playing = true;
@@ -91,15 +132,26 @@ void UILoop(AudioState& audioState) {
             }
         }
 
-
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
     }
 }
 
 
 
 
+static void recordInput(AudioState* audioState, unsigned long framesPerBuffer, const  float* input) {
+    //if recieving input then get the RMS and fill the ring buffer
+    if (input) {
+        //volume
+        float volume = AudioEffects::getRMS(input, framesPerBuffer);
+        audioState->currentVolume.store(volume, std::memory_order_relaxed);
+        //populate the ring buffer
+        for (size_t i = 0; i < framesPerBuffer; i++) {
+            audioState->ringBuffer.push(input[i]);
+            if (audioState->recording) audioState->recordingHistory.push_back(input[i]);
+        }
+    }
+}
 
 static void playRecording(AudioState* audioState, unsigned long framesPerBuffer, float* output) {
     if (audioState->playing) {
@@ -134,19 +186,7 @@ static void playRecording(AudioState* audioState, unsigned long framesPerBuffer,
     }
 }
 
-static void recordInput(AudioState* audioState, unsigned long framesPerBuffer, float* input) {
-    //if recieving input then get the RMS and fill the ring buffer
-    if (input) {
-        //volume
-        float volume = AudioEffects::getRMS(input, framesPerBuffer);
-        audioState->currentVolume.store(volume, std::memory_order_relaxed);
-        //populate the ring buffer
-        for (size_t i = 0; i < framesPerBuffer; i++) {
-            audioState->ringBuffer.push(input[i]);
-            if (audioState->recording) audioState->recordingHistory.push_back(input[i]);
-        }
-    }
-}
+
 
 
 static int callback(
@@ -160,7 +200,7 @@ static int callback(
     float* output= static_cast<float*> (outputStream);
 
     
-    recordInput(audioState, framesPerBuffer, output);
+    recordInput(audioState, framesPerBuffer, input);
 
     playRecording(audioState, framesPerBuffer, output);
 
@@ -168,8 +208,6 @@ static int callback(
 
     return paContinue;
 }
-
-
 
 
 
@@ -276,6 +314,7 @@ static void cleanupStream(PaStream* stream) {
     Pa_StopStream(stream);
     Pa_CloseStream(stream);
     Pa_Terminate();
+    std::cout << "Steam Cleanedup" << std::endl;
 }
 
 
@@ -284,8 +323,6 @@ using std::endl;
 using std::flush;
 int main() {
 
-    std::string menu = "'r' to toggle recroding\n'p' to playback recording\n'+/=' or '-/_' to control the volume\n'q' to quit";
-    std::cout << menu << std::endl;
 
     Pa_Initialize();
 
@@ -304,33 +341,13 @@ int main() {
 
     std::thread uiThread(UILoop, std::ref(audioState));
 
-    while (audioState.appRunning.load(std::memory_order_relaxed)) {
+    std::string menu = "'r' to toggle recording\n'p' to playback recording\n'+/=' or '-/_' to control the volume\n'q' to quit";
+    std::cout << menu << std::endl;
 
-        //display the audio bar
-        {
-            int width = 50;
-            std::string box = "#";
-            float v = audioState.currentVolume.load();
-            //fill the bar
-            int barLength = static_cast<int>(v * width);
-            std::string bar(barLength, box[0]);
-            std::string emptyBar(width - barLength, ' ');
-            std::cout << "\rVolume: " << bar << emptyBar << flush;
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-
-        ////get the pitch
-        //{
-        //    float frequency = audioState.getFrequency();
-        //    cout <<  "\rFrequency:   " << frequency << "         " << flush;
-        //}
-        //std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-
+    uiThread.join();
 
     cleanupStream(stream);
 
-    uiThread.join();
 
     return 0;
 }
