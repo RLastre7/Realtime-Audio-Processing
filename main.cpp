@@ -1,6 +1,12 @@
-﻿#include <iostream>
-#include <vector>
+﻿//port audio
 #include "portaudio.h"
+
+//io
+#include <iostream>
+#include <conio.h>
+
+//other includes
+#include <vector>
 #include <chrono>
 #include <thread>
 #include <atomic>
@@ -8,92 +14,25 @@
 #include <fstream>
 
 
-struct RingBuffer {
-    std::vector<float> buffer;
-    size_t writeIndex = 0;
-
-    RingBuffer() = default;
-
-    RingBuffer(size_t n) : buffer(n) {}
-
-    //handles wrapping when indexing, allows writing
-    float& operator[](size_t i) {
-        return buffer[i % buffer.size()];
-    }
-    //handles wrapping for indexing, read only
-    const float operator[](size_t i) const {
-        return buffer[i % buffer.size()];
-    }
-
-    //get a value from an offset relative to the head
-    float getRelativeToHead(size_t offset) const {
-        return (*this)[offset + writeIndex];
-    }
-    
-    //pushes a value to the next spot in the ring buffer
-    void push(float value) {
-        (*this)[writeIndex] = value;
-        writeIndex =  (writeIndex+1) % buffer.size();
-    }
-};
-
-struct AudioState {
-    RingBuffer ringBuffer;
-    size_t windowSize;
-    std::atomic<float> currentVolume;
-    std::atomic<float> gain = 1.0f;
-    std::atomic<float> drive = 1.0f;
-
-    AudioState(const size_t buffSize,const size_t windSize) {
-        ringBuffer.buffer.resize(buffSize);
-        windowSize = windSize;
-    }
-
-    float dotProductOnRingBuffer(size_t indexA, size_t indexB) {
-        float sum = 0.0f;
-        for (auto i = 0;i < windowSize;i++) {
-            sum += (ringBuffer[indexA + i] * ringBuffer[indexB + i]);
-        }
-        return sum / windowSize;
-    }
-
-    int findSimilarityLag() {
-        float maxSimilarity = 0.0f;
-        int maxLagIndex = -1;
+//my helper classes
+#include "AudioState.h"
+#include "RingBuffer.h"
 
 
-        //temp variable remove later
-        int minLag = 70;
-        int maxLag = 400;
 
-        //most recent data window
-        int windowStart = 0;
-
-        //go through whole data
-        for (auto lagIndex = minLag; lagIndex < maxLag; lagIndex++) {
-
-            int comparisonWindowStart = 0;
-
-            float similarity = dotProductOnRingBuffer(windowStart, comparisonWindowStart);
-
-            //compare with current max and assign new max
-            if (similarity > maxSimilarity) {
-                maxLagIndex = lagIndex;
-                maxSimilarity = similarity;
-            }
-        }
-        return maxLagIndex;
-    }
-
-    float getFrequency() {
-        int lag = findSimilarityLag();
-        return static_cast<float>(ringBuffer.buffer.size()) / lag;
-    }
-
-};
 
 struct AudioEffects {
+    
+    //get volume
+    static float getRMS(const float* data, unsigned long size) {
+        float sum = 0.0f;
+        for (auto i = 0; i < size; i++) {
+            sum += data[i] * data[i];
+        }
+        return sqrt(sum / size);
+    }
 
+    //set volume
     static void gain(float& data,const float gain) {
         data *= gain;
     }
@@ -102,6 +41,8 @@ struct AudioEffects {
         data *= drive;
         data = std::tanh(data);
     }
+
+
      
 };
 
@@ -110,50 +51,103 @@ enum StreamType {
     OUTPUT,
 };
 
-
-static void dumpVectorCSV(const std::vector<float>& v, const std::string& name) {
-    std::ofstream file(name, std::ios::trunc);
-    for (size_t i = 0; i < v.size(); ++i) {
-        file << i << "," << v[i] << "\n";
-    }
-}
-
-
-
 void UILoop(AudioState& audioState) {
     char c = ' ';
-    std::string menu;
-    std::cout << menu << std::endl;
 
-    while (c != 'q' ) {
+    while (audioState.appRunning.load(std::memory_order_relaxed)) {
+
+        float g = audioState.gain.load(std::memory_order_relaxed);
+
+        if (audioState.recording) std::cout << "recording       " << std::flush;
+        else if (audioState.playing) std::cout << "playing      " << std::flush;
+        else std::cout << "idle     " << std::flush;
 
 
-        std::cin >> c;
+        if (_kbhit()) {
+            c = _getch();
 
-        switch (c) {
+            switch (c) {
             case 'q':
+                audioState.appRunning.store(false, std::memory_order_relaxed);
                 break;
             case '+':
-                audioState.gain.store( audioState.gain.load() + 0.01);
+            case '=':
+                audioState.gain.store(g + 0.5f, std::memory_order_relaxed);
                 break;
             case '-':
-                audioState.gain.store(audioState.gain.load() - 0.01);
+            case '_':
+                audioState.gain.store(g - 0.5f, std::memory_order_relaxed);
                 break;
+            case 'r':
+                if(!audioState.recording) audioState.recordingHistory.clear();
+                audioState.playing = false;
+                audioState.recording = !audioState.recording;
+
+                break;
+            case 'p':
+                audioState.recording = false;
+                audioState.playing = true;
+                break;
+            }
         }
 
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
     }
 }
 
 
 
-//get volume
-static float getRMS(const float* data,unsigned long size) {
-    float sum = 0.0f;
-    for (auto i=0; i < size; i++) {
-        sum += data[i] * data[i];
+
+
+static void playRecording(AudioState* audioState, unsigned long framesPerBuffer, float* output) {
+    if (audioState->playing) {
+
+        float g = audioState->gain.load(std::memory_order_relaxed);
+        float d = audioState->drive.load(std::memory_order_relaxed);
+        auto recordingHistory = audioState->recordingHistory;
+        //send data to output stream
+        for (unsigned long i = 0; i < framesPerBuffer; i++) {
+            if (!recordingHistory.size()) {
+                audioState->playing.store(false, std::memory_order_relaxed);
+                break;
+            }
+            size_t playbackIndex = audioState->playbackIndex.load(std::memory_order_relaxed);
+
+            float x = recordingHistory[playbackIndex];
+
+            playbackIndex = (playbackIndex + 1) % recordingHistory.size();
+            audioState->playbackIndex.store(playbackIndex, std::memory_order_relaxed);
+            if (playbackIndex >= recordingHistory.size() - 1) {
+                audioState->playing.store(false, std::memory_order_relaxed);
+            }
+
+            AudioEffects::gain(x, g);
+            AudioEffects::distortion(x, d);
+
+            output[i] = x;
+        }
     }
-    return sqrt(sum / size);
+    else {
+        for (unsigned long i = 0; i < framesPerBuffer; i++) output[i] = 0.0f;
+    }
 }
+
+static void recordInput(AudioState* audioState, unsigned long framesPerBuffer, float* input) {
+    //if recieving input then get the RMS and fill the ring buffer
+    if (input) {
+        //volume
+        float volume = AudioEffects::getRMS(input, framesPerBuffer);
+        audioState->currentVolume.store(volume, std::memory_order_relaxed);
+        //populate the ring buffer
+        for (size_t i = 0; i < framesPerBuffer; i++) {
+            audioState->ringBuffer.push(input[i]);
+            if (audioState->recording) audioState->recordingHistory.push_back(input[i]);
+        }
+    }
+}
+
 
 static int callback(
     const void* inputStream, void* outputStream,
@@ -164,32 +158,18 @@ static int callback(
     auto* audioState = static_cast<AudioState*>(userData);
     const float* input = static_cast<const float*> (inputStream);
     float* output= static_cast<float*> (outputStream);
+
     
-    //if recieving input then get the RMS and fill the ring buffer
-    if (input) {
-        //volume
-        float volume = getRMS(input, framesPerBuffer);
-        audioState->currentVolume.store(volume, std::memory_order_relaxed);
-        
-        //populate the ring buffer
-        for (size_t i = 0;i < framesPerBuffer;i++) {
-            audioState->ringBuffer.push(input[i]);
-        }
+    recordInput(audioState, framesPerBuffer, output);
 
-        float g = audioState->gain.load(std::memory_order_relaxed);
-        float d = audioState->drive.load(std::memory_order_relaxed);
+    playRecording(audioState, framesPerBuffer, output);
 
-        //send data to output stream
-        for (unsigned long i = 0; i < framesPerBuffer; i++) {
-            float x = input ? input[i] : 0.0f;
-            AudioEffects::gain(x, g);
-            AudioEffects::distortion(x, d);
-            output[i] = x;
-        }
-    }
+    
 
     return paContinue;
 }
+
+
 
 
 
@@ -303,8 +283,9 @@ using std::cout;
 using std::endl;
 using std::flush;
 int main() {
-    
 
+    std::string menu = "'r' to toggle recroding\n'p' to playback recording\n'+/=' or '-/_' to control the volume\n'q' to quit";
+    std::cout << menu << std::endl;
 
     Pa_Initialize();
 
@@ -323,7 +304,7 @@ int main() {
 
     std::thread uiThread(UILoop, std::ref(audioState));
 
-    while (true) {
+    while (audioState.appRunning.load(std::memory_order_relaxed)) {
 
         //display the audio bar
         {
