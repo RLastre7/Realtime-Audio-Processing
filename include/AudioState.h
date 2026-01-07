@@ -2,6 +2,7 @@
 #include <atomic>
 #include <vector>
 #include "RingBuffer.h"
+#include "AudioMode.h"
 
 using std::atomic;
 struct AudioState {
@@ -12,8 +13,7 @@ struct AudioState {
     atomic<float> currentVolume;
     atomic<float> gain = 1.0f;
     atomic<float> drive = 1.0f;
-    atomic<bool> recording = false;
-    atomic<bool> playing = false;
+    atomic<AudioMode> audioMode = AudioMode::Idle; 
     atomic<bool> appRunning = true;
 
     AudioState(const size_t buffSize, const size_t windSize);

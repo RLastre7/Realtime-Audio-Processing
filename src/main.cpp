@@ -17,6 +17,7 @@
 //my helper classes
 #include "AudioState.h"
 #include "RingBuffer.h"
+#include "AudioMode.h"
 
 
 
@@ -52,6 +53,7 @@ enum StreamType {
 };
 
 
+
 static void displayVolumeBar(AudioState& audioState) {
     //display the audio bar
     {
@@ -79,14 +81,15 @@ static void printData(AudioState& audioState) {
 
     //set the recroding/playback status
     std::string status;
-    if (audioState.recording.load(std::memory_order_relaxed)) status = "recording";
-    else if (audioState.playing.load(std::memory_order_relaxed)) status = "playing     ";
-    else status = "idle     ";
+    if (audioState.audioMode.load(std::memory_order_relaxed) == AudioMode::Recording) status = "recording               ";
+    if (audioState.audioMode.load(std::memory_order_relaxed) == AudioMode::PlayingRecording) status = "playing recording       ";
+    if (audioState.audioMode.load(std::memory_order_relaxed) == AudioMode::LivePlayback) status = "live playback      ";
+    if (audioState.audioMode.load(std::memory_order_relaxed) == AudioMode::Idle) status = "idle         ";
 
     //print information 
     std::cout << status << std::endl;
     std::cout << "Gain: " << audioState.gain.load(std::memory_order_relaxed) << std::endl;
-
+    std::cout << "Drive: " << audioState.drive.load(std::memory_order_relaxed) << std::endl;
 }
 
 void UILoop(AudioState& audioState) {
@@ -97,7 +100,6 @@ void UILoop(AudioState& audioState) {
         printData(audioState);
         
         float g = audioState.gain.load(std::memory_order_relaxed);
-
 
         //read user input
         if (_kbhit()) {
@@ -120,14 +122,17 @@ void UILoop(AudioState& audioState) {
                 break;
                 //toggle recording
             case 'r':
-                if (!audioState.recording) audioState.recordingHistory.clear();
-                audioState.playing = false;
-                audioState.recording = !audioState.recording;
+                audioState.recordingHistory.clear();
+                toggleMode(audioState.audioMode, AudioMode::Recording);
                 break;
                 //play recording
             case 'p':
-                audioState.recording = false;
-                audioState.playing = true;
+                audioState.playbackIndex.store(0, std::memory_order_relaxed);
+                toggleMode(audioState.audioMode, AudioMode::PlayingRecording);
+                break;
+                //play the input live, not stored
+            case 'l':
+                toggleMode(audioState.audioMode, AudioMode::LivePlayback);
                 break;
             }
         }
@@ -148,42 +153,55 @@ static void recordInput(AudioState* audioState, unsigned long framesPerBuffer, c
         //populate the ring buffer
         for (size_t i = 0; i < framesPerBuffer; i++) {
             audioState->ringBuffer.push(input[i]);
-            if (audioState->recording) audioState->recordingHistory.push_back(input[i]);
+            if (audioState->audioMode == AudioMode::Recording) audioState->recordingHistory.push_back(input[i]);
         }
     }
 }
 
-static void playRecording(AudioState* audioState, unsigned long framesPerBuffer, float* output) {
-    if (audioState->playing) {
+static void playRecording(AudioState* audioState, unsigned long framesPerBuffer, float* output,const float* input) {
+    float g = audioState->gain.load(std::memory_order_relaxed);
+    float d = audioState->drive.load(std::memory_order_relaxed);
 
-        float g = audioState->gain.load(std::memory_order_relaxed);
-        float d = audioState->drive.load(std::memory_order_relaxed);
-        auto recordingHistory = audioState->recordingHistory;
+    //play recording
+    if (audioState->audioMode.load(std::memory_order_relaxed) == AudioMode::PlayingRecording) {
+        auto& recordingHistory = audioState->recordingHistory;
         //send data to output stream
         for (unsigned long i = 0; i < framesPerBuffer; i++) {
-            if (!recordingHistory.size()) {
-                audioState->playing.store(false, std::memory_order_relaxed);
+
+            size_t playbackIndex = audioState->playbackIndex.load(std::memory_order_relaxed);
+            
+            if (recordingHistory.size() == 0 || playbackIndex >= recordingHistory.size()) {
+                std::cout << "Switching from recording to idle" << std::endl;
+                toggleMode(audioState->audioMode, AudioMode::FinishedPlaying);
                 break;
             }
-            size_t playbackIndex = audioState->playbackIndex.load(std::memory_order_relaxed);
 
-            float x = recordingHistory[playbackIndex];
+            float x = recordingHistory[playbackIndex++];
 
-            playbackIndex = (playbackIndex + 1) % recordingHistory.size();
             audioState->playbackIndex.store(playbackIndex, std::memory_order_relaxed);
-            if (playbackIndex >= recordingHistory.size() - 1) {
-                audioState->playing.store(false, std::memory_order_relaxed);
-            }
 
             AudioEffects::gain(x, g);
             AudioEffects::distortion(x, d);
 
             output[i] = x;
         }
+        return;
     }
-    else {
-        for (unsigned long i = 0; i < framesPerBuffer; i++) output[i] = 0.0f;
+    //play live input feed
+    if(audioState->audioMode.load(std::memory_order_relaxed) == AudioMode::LivePlayback) {
+        for (unsigned long i = 0; i < framesPerBuffer; i++) {
+            float x = input[i];
+            AudioEffects::gain(x, g);
+            AudioEffects::distortion(x, d);
+            output[i] = x;
+        }
+        return;
     }
+    //neither (just output 0)
+    for (unsigned long i = 0; i < framesPerBuffer; i++) output[i] = 0.0f;
+
+    
+
 }
 
 
@@ -202,7 +220,7 @@ static int callback(
     
     recordInput(audioState, framesPerBuffer, input);
 
-    playRecording(audioState, framesPerBuffer, output);
+    playRecording(audioState, framesPerBuffer, output,input);
 
     
 
@@ -274,7 +292,8 @@ bool testConnection(PaDeviceIndex i,StreamType streamType) {
         std::cout << "Connection Succesful" << std::endl;
         return true;
     }
-    std::cout << "Connection unsuccesful" << std::endl;
+    std::cout << "Connection unsuccesful:" << err << std::endl;
+
     return false;
 }
 
@@ -314,7 +333,6 @@ static void cleanupStream(PaStream* stream) {
     Pa_StopStream(stream);
     Pa_CloseStream(stream);
     Pa_Terminate();
-    std::cout << "Steam Cleanedup" << std::endl;
 }
 
 
