@@ -24,6 +24,7 @@
     <ClCompile Include="src\RingBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\AudioMode.h" />
     <ClInclude Include="include\AudioState.h" />
     <ClInclude Include="include\pa_asio.h" />
     <ClInclude Include="include\pa_jack.h" />
