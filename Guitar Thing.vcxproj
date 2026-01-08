@@ -19,11 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\AudioEffects.cpp" />
     <ClCompile Include="src\AudioState.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\RingBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\AudioEffects.h" />
     <ClInclude Include="include\AudioMode.h" />
     <ClInclude Include="include\AudioState.h" />
     <ClInclude Include="include\pa_asio.h" />
@@ -37,6 +39,8 @@
     <ClInclude Include="include\pa_win_wmme.h" />
     <ClInclude Include="include\portaudio.h" />
     <ClInclude Include="include\RingBuffer.h" />
+    <ClInclude Include="include\Stream.h" />
+    <ClInclude Include="include\UserInterface.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
