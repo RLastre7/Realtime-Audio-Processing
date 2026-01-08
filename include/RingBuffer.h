@@ -14,7 +14,7 @@ struct RingBuffer {
     const float operator[](size_t i) const;
 
     //get a value from an offset relative to the head
-    float getRelativeToHead(size_t offset) const;
+    float getRelativeToHead(int offset) const;
 
     //pushes a value to the next spot in the ring buffer
     void push(float value);
