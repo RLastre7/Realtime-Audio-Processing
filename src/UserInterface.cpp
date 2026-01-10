@@ -91,8 +91,7 @@ static void handleInput(char c, AudioState& audioState) {
     case 'v': //live playback
         toggleMode(audioState.audioMode, AudioMode::LivePlayback);
         break;
-        break;
-    case 'c':
+    case 'c': //clear recording
         audioState.recordingHistory.clear();
         break;
     }

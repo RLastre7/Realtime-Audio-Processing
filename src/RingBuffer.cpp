@@ -14,8 +14,6 @@ const float RingBuffer::operator[](size_t i) const {
     return buffer[i];
 }
 
-
-
 //get a value from an offset relative to the head
 float RingBuffer::getRelativeToHead(int offset) const {
     int index = (writeIndex + offset + buffer.size()) % buffer.size();
