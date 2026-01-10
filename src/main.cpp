@@ -44,13 +44,6 @@ int main() {
 
     std::thread uiThread(UserInterface::UILoop, std::ref(audioState));
 
-    std::string menu =
-        "'t' Toggle Recording | 'p' Play Recording | 'l' Live Playback | 'c' Clear Recording | 'q' Quit\n"
-        "Gain: '+ / -' adjust | 'g' toggle ON/OFF\n"
-        "Drive: '] / [' adjust | 'd' toggle ON/OFF\n";
-        //"Delay: 'e / r' length adjust | 'w / s' wet adjust | 'f' toggle ON/OFF";
-    std::cout << menu << std::endl;
-
     uiThread.join();
 
     Stream::cleanupStream(stream);
