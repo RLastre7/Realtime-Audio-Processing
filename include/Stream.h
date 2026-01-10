@@ -9,7 +9,7 @@ enum StreamType {
 };
 
 struct Stream {
-    inline static void recordInput(AudioState* audioState, unsigned long framesPerBuffer, const  float* input) {
+    inline static void recordInput(AudioState* audioState, unsigned long framesPerBuffer, const  float* input, float* output) {
         //if recieving input then get the RMS and fill the ring buffer
         if (input) {
             //volume
@@ -17,13 +17,22 @@ struct Stream {
             audioState->effectParams.currentVolume.store(volume, std::memory_order_relaxed);
             //populate the ring buffer
             for (size_t i = 0; i < framesPerBuffer; i++) {
-                audioState->ringBuffer.push(input[i]);
-                if (audioState->audioMode == AudioMode::Recording) audioState->recordingHistory.push_back(input[i]);
+                float x = input[i];
+                AudioEffects::applyEffects(x, *audioState);
+                //push to recording
+                if (audioState->audioMode == AudioMode::Recording) audioState->recordingHistory.push_back(x);
+                //play live audio
+                if (audioState->audioMode == AudioMode::LivePlayback) output[i] = x;
+            }
+        }
+        else {
+            for (unsigned long i = 0; i < framesPerBuffer; i++) {
+                output[i] = 0.0f;
             }
         }
     }
 
-    inline static void playRecording(AudioState* audioState, unsigned long framesPerBuffer, float* output, const float* input) {
+    inline static void playRecording(AudioState* audioState, unsigned long framesPerBuffer,float* output) {
 
         float g = audioState->effectParams.gain.load(std::memory_order_relaxed);
         float d = audioState->effectParams.drive.load(std::memory_order_relaxed);
@@ -37,7 +46,7 @@ struct Stream {
 
                 size_t playbackIndex = audioState->playbackIndex.load(std::memory_order_relaxed);
 
-                if (recordingHistory.size() == 0) {
+                if (recordingHistory.size() == 0 || (playbackIndex >= recordingHistory.size() && audioMode == AudioMode::PlayingRecording)) {
                     audioState->audioMode.store(AudioMode::Idle, std::memory_order_relaxed);
                     return;
                 }
@@ -51,24 +60,14 @@ struct Stream {
 
                 audioState->playbackIndex.store(playbackIndex, std::memory_order_relaxed);
 
-                AudioEffects::applyEffects(x, *audioState);
 
                 output[i] = x;
             }
-            return;
-        }
-        //play live input feed
-        if (audioMode == AudioMode::LivePlayback) {
-            for (unsigned long i = 0; i < framesPerBuffer; ++i) {
-                x = input[i];
-                AudioEffects::applyEffects(x, *audioState);
-                output[i] = x;
-            }
-            return;
         }
         //neither (just output 0)
-        for (unsigned long i = 0; i < framesPerBuffer; i++) output[i] = 0.0f;
-
+        if (audioState->audioMode == AudioMode::Idle) {
+            for (unsigned long i = 0; i < framesPerBuffer; i++) output[i] = 0.0f;
+        }
 
 
     }
@@ -85,10 +84,8 @@ struct Stream {
 
 
 
-        recordInput(audioState, framesPerBuffer, input);
-        playRecording(audioState, framesPerBuffer, output, input);
-
-
+        recordInput(audioState, framesPerBuffer, input,output);
+        playRecording(audioState, framesPerBuffer,output);
 
         return paContinue;
     }

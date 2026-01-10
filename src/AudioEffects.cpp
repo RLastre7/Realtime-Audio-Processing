@@ -20,16 +20,14 @@ void AudioEffects::overdrive(float& data, float drive) {
     drive = std::max(drive, 0.01f);
     data *= drive;
     data = std::tanh(data);
+    data /= std::tanh(drive);
 }
 
 void AudioEffects::delay(float& data, int delaySamples, RingBuffer& buffer, float wet, float feedback = 0.5f) {
-/*    float delayed = buffer.getRelativeToHead(-delaySamples); 
+    float delayed = buffer.getRelativeToHead(-delaySamples); 
     float out = data + delayed * wet;                        
     buffer.push(data + delayed * feedback);                  
-    data = out;       */                                       
-    float delayed = buffer.getRelativeToHead(-delaySamples);
-    buffer.push(data);
-    data = delayed;
+    data = out;                                              
 }
 
 void AudioEffects::applyEffects(float& data, AudioState& audioState) {
@@ -41,7 +39,7 @@ void AudioEffects::applyEffects(float& data, AudioState& audioState) {
     if (audioState.effectParams.gain_flag) gain(data, p_gain);
     if (audioState.effectParams.overdrive_flag) overdrive(data, p_drive);
     if (audioState.effectParams.delay_flag) delay(data, p_delaySamples, audioState.ringBuffer, p_wet);
-
+    else audioState.ringBuffer.push(data);
 }
 
 
