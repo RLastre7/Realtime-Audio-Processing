@@ -14,7 +14,7 @@ struct Stream {
         if (input) {
             //volume
             float volume = AudioEffects::getRMS(input, framesPerBuffer);
-            audioState->currentVolume.store(volume, std::memory_order_relaxed);
+            audioState->effectParams.currentVolume.store(volume, std::memory_order_relaxed);
             //populate the ring buffer
             for (size_t i = 0; i < framesPerBuffer; i++) {
                 audioState->ringBuffer.push(input[i]);
@@ -25,22 +25,25 @@ struct Stream {
 
     inline static void playRecording(AudioState* audioState, unsigned long framesPerBuffer, float* output, const float* input) {
 
-        float g = audioState->gain.load(std::memory_order_relaxed);
-        float d = audioState->drive.load(std::memory_order_relaxed);
+        float g = audioState->effectParams.gain.load(std::memory_order_relaxed);
+        float d = audioState->effectParams.drive.load(std::memory_order_relaxed);
         float x;
         auto audioMode = audioState->audioMode.load(std::memory_order_relaxed);
         //play recording
-        if (audioMode == AudioMode::PlayingRecording) {
+        if (audioMode == AudioMode::PlayingRecording || audioMode == AudioMode::Loop) {
             auto& recordingHistory = audioState->recordingHistory;
             //send data to output stream
             for (unsigned long i = 0; i < framesPerBuffer; i++) {
 
                 size_t playbackIndex = audioState->playbackIndex.load(std::memory_order_relaxed);
 
-                if (recordingHistory.size() == 0 || playbackIndex >= recordingHistory.size()) {
+                if (recordingHistory.size() == 0) {
                     audioState->audioMode.store(AudioMode::Idle, std::memory_order_relaxed);
-                    audioState->playbackIndex = 0;
                     return;
+                }
+
+                if (playbackIndex >= recordingHistory.size()) {
+                    playbackIndex = 0;
                 }
 
 
@@ -89,7 +92,6 @@ struct Stream {
 
         return paContinue;
     }
-
 
 
     //returns all the input devices indexes in a set

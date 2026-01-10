@@ -3,7 +3,7 @@
 #include <iostream>
 
 enum AudioMode{
-    Idle, Recording, PlayingRecording, LivePlayback,FinishedPlaying
+    Idle, Recording, PlayingRecording, LivePlayback,Loop
 };
 
 inline void toggleMode(std::atomic<AudioMode>& mode, AudioMode target) {

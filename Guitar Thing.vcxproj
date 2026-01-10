@@ -23,11 +23,13 @@
     <ClCompile Include="src\AudioState.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\RingBuffer.cpp" />
+    <ClCompile Include="src\UserInterface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\AudioEffects.h" />
     <ClInclude Include="include\AudioMode.h" />
     <ClInclude Include="include\AudioState.h" />
+    <ClInclude Include="include\EffectParameters.h" />
     <ClInclude Include="include\pa_asio.h" />
     <ClInclude Include="include\pa_jack.h" />
     <ClInclude Include="include\pa_linux_alsa.h" />
