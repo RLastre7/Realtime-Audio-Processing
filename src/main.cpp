@@ -29,14 +29,14 @@ int main() {
 
     Pa_Initialize();
 
-    PaStreamParameters inputParams = Stream::setupStreamParameters(INPUT,true);
+    PaStreamParameters inputParams = Stream::setupStreamParameters(INPUT,false);
     PaStreamParameters outputParams = Stream::setupStreamParameters(OUTPUT,true);
 
-    int sampleRate = 44100;
-    int framesPerBuffer = 256;
+    int sampleRate = Pa_GetDeviceInfo(inputParams.device)->defaultSampleRate;
+    int framesPerBuffer = 64;
 
     PaStream* stream = nullptr;
-    AudioState audioState(sampleRate,framesPerBuffer);
+    AudioState audioState(sampleRate,framesPerBuffer,inputParams.device,outputParams.device);
 
 
     Pa_OpenStream(&stream, &inputParams, &outputParams, sampleRate, framesPerBuffer, paNoFlag, Stream::callback, &audioState);

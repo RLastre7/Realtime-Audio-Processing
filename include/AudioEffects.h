@@ -24,6 +24,8 @@ struct AudioEffects {
 
     //delay based on how many samples to delay by and how "wet" to make it
     static void delay(float& data, int delaySamples, RingBuffer& buffer, float wet, float feedback);
+
+    static void fuzz(float& data, float drive);
     
     static void applyEffects(float& data, AudioState& audioState);
 

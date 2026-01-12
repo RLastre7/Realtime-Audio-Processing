@@ -20,9 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\AudioEffects.cpp" />
-    <ClCompile Include="src\AudioState.cpp" />
+    <ClCompile Include="src\EffectParameters.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\RingBuffer.cpp" />
+    <ClCompile Include="src\Stream.cpp" />
     <ClCompile Include="src\UserInterface.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +44,14 @@
     <ClInclude Include="include\RingBuffer.h" />
     <ClInclude Include="include\Stream.h" />
     <ClInclude Include="include\UserInterface.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\effectFlag.xmacro">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="src\effects.xmacro">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
