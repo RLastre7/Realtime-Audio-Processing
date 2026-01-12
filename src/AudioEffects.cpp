@@ -1,6 +1,5 @@
 #include "AudioEffects.h"
 
-    
 
 //get volume
 float AudioEffects::getRMS(const float* data, unsigned long size) {
@@ -30,6 +29,11 @@ void AudioEffects::delay(float& data, int delaySamples, RingBuffer& buffer, floa
     data = out;                                              
 }
 
+void AudioEffects::fuzz(float& data,float drive) {
+    data *= drive;
+    data /= (1.0f + abs(data));
+}
+
 void AudioEffects::applyEffects(float& data, AudioState& audioState) {
     auto p_gain = audioState.effectParams.gain.load(std::memory_order_relaxed);
     auto p_drive = audioState.effectParams.drive.load(std::memory_order_relaxed);
@@ -38,6 +42,7 @@ void AudioEffects::applyEffects(float& data, AudioState& audioState) {
 
     if (audioState.effectParams.gain_flag) gain(data, p_gain);
     if (audioState.effectParams.overdrive_flag) overdrive(data, p_drive);
+    if (audioState.effectParams.fuzz_flag) fuzz(data, p_drive);
     if (audioState.effectParams.delay_flag) delay(data, p_delaySamples, audioState.ringBuffer, p_wet);
     else audioState.ringBuffer.push(data);
 }

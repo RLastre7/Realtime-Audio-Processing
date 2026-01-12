@@ -22,8 +22,10 @@ static void handleInput(char c, AudioState& audioState) {
     //rate of change for each effect variable
     float sliderChange = 0.1f;
     float largeSliderChange = 1.f;
-    float delayChange = 50.f;
     float wetChange = 0.05f;
+    
+    //1ms
+    float delayChange = static_cast<float>(audioState.effectParams.sampleRate.load(std::memory_order_relaxed)) / 1000.f;
 
     //audio state variables
     float g = audioState.effectParams.gain.load(std::memory_order_relaxed);
@@ -76,6 +78,9 @@ static void handleInput(char c, AudioState& audioState) {
     case 'f': // toggle delay effect
         audioState.effectParams.delay_flag = !audioState.effectParams.delay_flag;
         break;
+    case 'k': //toggle fuzz
+        audioState.effectParams.fuzz_flag = !audioState.effectParams.fuzz_flag;
+        break;
 
         // Recording / playback
     case 't': //recording
@@ -120,6 +125,13 @@ static void displayEffectFlags(AudioState& audioState) {
     std::cout << audioState.effectParams.getEffectFlags() << std::endl;
 }
 
+static void displayDevices(AudioState& audioState) {
+    auto input = Pa_GetDeviceInfo(audioState.inputDevice);
+    auto output = Pa_GetDeviceInfo(audioState.outputDevice);
+    std::cout << "Input: " << input->name << "->" << Pa_GetHostApiInfo(input->hostApi)->name << std::endl;
+    std::cout << "Output: " << output->name << "->" << Pa_GetHostApiInfo(output->hostApi)->name << std::endl;
+}
+
 void UserInterface::printData(AudioState& audioState) {
     // Move cursor to line below menu
     std::cout << "\033[6;0H";
@@ -133,14 +145,9 @@ void UserInterface::printData(AudioState& audioState) {
 
     displayEffectFlags(audioState);
 
-    //// Display effect parameters
-    //std::cout << "Gain: " << audioState.effectParams.gain.load(std::memory_order_relaxed) << "           " << (audioState.activatedEffects[Effects::GAIN] ? " [ON]" : " [OFF]") << "           " << std::endl;
-
-    //std::cout << "Drive:" << audioState.effectParams.drive.load(std::memory_order_relaxed) << "          " << (audioState.activatedEffects[Effects::DISTORTION] ? " [ON]" : " [OFF]") << "           " << std::endl;
-
-    //std::cout << "Delay:" << audioState.delaySamples.load(std::memory_order_relaxed) << " samples" << "         " << (audioState.activatedEffects[Effects::DELAY] ? " [ON]" : " [OFF]") << "           " << std::endl;
-
-    //std::cout << "Wet:" << audioState.wet.load(std::memory_order_relaxed) << std::endl;
+    std::cout << std::fixed << std::setprecision(10) << "Proccessing Time: " << audioState.processTime.load(std::memory_order_relaxed) << std::endl;
+    
+    displayDevices(audioState);
 
     //blank line
     std::cout << std::endl;
@@ -152,8 +159,9 @@ void UserInterface::UILoop(AudioState& audioState) {
     std::string menu =
         "'t' Toggle Recording | 'p' Play Recording | 'v' Live Playback | 'l' loop recording |'c' Clear Recording | 'q' Quit\n"
         "Gain: '+ / -' adjust | 'g' toggle ON/OFF\n"
-        "Drive: '] / [' adjust | 'd' toggle ON/OFF\n";
-    //"Delay: 'e / r' length adjust | 'w / s' wet adjust | 'f' toggle ON/OFF";
+        "Drive: '] / [' adjust | 'd' toggle ON/OFF\n"
+        "Fuzz 'k' toggle ON/OFF\n"
+        "Delay: 'e / r' length adjust | 'w / s' wet adjust | 'f' toggle ON/OFF";
     std::cout << menu << std::endl;
 
     while (audioState.appRunning.load(std::memory_order_relaxed)) {
