@@ -189,7 +189,7 @@ PaDeviceIndex Stream::getDevice(StreamType streamType, bool useDefault) {
 PaStreamParameters Stream::setupStreamParameters(StreamType streamType, bool useDefault) {
         PaStreamParameters inputParams{};
         inputParams.device = getDevice(streamType, useDefault);
-        inputParams.channelCount = (streamType == StreamType::INPUT) ? Pa_GetDeviceInfo(inputParams.device)->maxInputChannels : Pa_GetDeviceInfo(inputParams.device)->maxOutputChannels;
+        inputParams.channelCount = 1;
         inputParams.sampleFormat = paFloat32;
         inputParams.suggestedLatency = Pa_GetDeviceInfo(inputParams.device)->defaultLowInputLatency;
         inputParams.hostApiSpecificStreamInfo = nullptr;
