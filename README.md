@@ -1,20 +1,18 @@
 # Guitar Thing 🎸
 
 A real-time audio processing application written in C++ using **PortAudio**.  
-This project demonstrates low-latency audio streaming, custom audio effects, and user interaction via a simple interface.
+This project demonstrates low-latency audio streaming, custom audio effects, and user interaction via the command line.
 
 ---
 
 ## Project Overview
 
 **Guitar Thing** allows users to process audio in real-time using custom effects implemented in C++.  
-It is cross-platform (Windows/Linux/macOS) when built with CMake and PortAudio.
 
 ### Features
 - Real-time audio input/output using PortAudio
 - Custom audio effects engine
 - Modular design: separate classes for audio processing, streaming, and user interface
-- Cross-platform build with CMake
 
 ---
 
@@ -31,7 +29,7 @@ It is cross-platform (Windows/Linux/macOS) when built with CMake and PortAudio.
 
 1. **Clone the repository:**
 
-git clone https://github.com/yourusername/rlastre7-guitar-thing.git
+git clone https://github.com/RLastre7/Guitar-thing.git
 cd rlastre7-guitar-thing
 
 2. **Install PortAudio via vcpkg (one-time per machine):**
