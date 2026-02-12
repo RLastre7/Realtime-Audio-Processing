@@ -1,4 +1,5 @@
-# Guitar Thing 🎸
+# Guitar Thing 
+
 
 A real-time audio processing application written in C++ using **PortAudio**.  
 This project demonstrates low-latency audio streaming, custom audio effects, and user interaction via the command line.
@@ -43,6 +44,10 @@ cd rlastre7-guitar-thing
 cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="C:/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
 
 > Replace the path with your local vcpkg location.
+
+-- or --
+from repo root directory
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
 
 4. **Build the project:**
 
