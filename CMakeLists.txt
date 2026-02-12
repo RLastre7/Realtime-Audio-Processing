@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(GuitarThing LANGUAGES CXX)
+project(RealtimeAudio LANGUAGES CXX)
 
 # Modern C++
 set(CMAKE_CXX_STANDARD 20)
@@ -11,7 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(portaudio CONFIG REQUIRED)
 
 # Add executable
-add_executable(GuitarThing
+add_executable(RealtimeAudio
     src/main.cpp
     src/AudioEffects.cpp
     src/EffectParameters.cpp
@@ -20,21 +20,21 @@ add_executable(GuitarThing
     src/UserInterface.cpp
 )
 
-# Include your headers
-target_include_directories(GuitarThing
+# Include headers
+target_include_directories(RealtimeAudio
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 # Link PortAudio
-target_link_libraries(GuitarThing
+target_link_libraries(RealtimeAudio
     PRIVATE
         portaudio
 )
 
 # Compiler warnings
 if (MSVC)
-    target_compile_options(GuitarThing PRIVATE /W4)
+    target_compile_options(RealtimeAudio PRIVATE /W4)
 else()
-    target_compile_options(GuitarThing PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(RealtimeAudio PRIVATE -Wall -Wextra -Wpedantic)
 endif()
