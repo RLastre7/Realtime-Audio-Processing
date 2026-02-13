@@ -30,12 +30,14 @@ Allows users to process audio in real-time using custom effects implemented in C
 1. **Clone the repository:**
 
 git clone https://github.com/RLastre7/Realtime-Audio-Processing.git
+
 cd Realtime-Audio-Processing
 
 2. **Install PortAudio via vcpkg (one-time per machine):**
 
 # In your vcpkg folder
 .\bootstrap-vcpkg.bat
+
 .\vcpkg install portaudio:x64-windows
 
 3. **Configure the project with CMake:**
