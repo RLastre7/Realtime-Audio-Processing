@@ -39,6 +39,8 @@ cd Realtime-Audio-Processing
 .\bootstrap-vcpkg.bat
 
 .\vcpkg install portaudio:x64-windows
+>or for port audio with asio
+.\vcpkg install portaudio[asio]:x64-windows
 
 3. **Configure the project with CMake:**
 
