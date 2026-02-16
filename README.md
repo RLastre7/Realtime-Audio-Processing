@@ -33,27 +33,36 @@ git clone https://github.com/RLastre7/Realtime-Audio-Processing.git
 
 cd Realtime-Audio-Processing
 
-2. **Install PortAudio via vcpkg (one-time per machine):**
+---
 
-# In your vcpkg folder
+# 2. **Install PortAudio via vcpkg (one-time per machine):**
+
+ In your vcpkg folder
+ 
 .\bootstrap-vcpkg.bat
 
 .\vcpkg install portaudio:x64-windows
->or for port audio with asio
+> Or for port audio with asio
+
 .\vcpkg install portaudio[asio]:x64-windows
 
-3. **Configure the project with CMake:**
+---
+
+# 3. **Configure the project with CMake:**
 
 cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="C:/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
 
 > Replace the path with your local vcpkg location.
 
+---
 
-4. **Build the project:**
+# 4. **Build the project:**
 
 cmake --build build --config Release
 
-5. **Run the executable:**
+---
+
+# 5. **Run the executable:**
 
 .\build\Release\RealtimeAudio.exe
 
