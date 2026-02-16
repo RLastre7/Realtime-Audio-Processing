@@ -30,10 +30,6 @@ void Stream::recordInput(AudioState* audioState, unsigned long framesPerBuffer, 
     }
 
 void Stream::playRecording(AudioState* audioState, unsigned long framesPerBuffer, float* output) {
-
-        float g = audioState->effectParams.gain.load(std::memory_order_relaxed);
-        float d = audioState->effectParams.drive.load(std::memory_order_relaxed);
-        float x;
         auto audioMode = audioState->audioMode.load(std::memory_order_relaxed);
         //play recording
         if (audioMode == AudioMode::PlayingRecording || audioMode == AudioMode::Loop) {
@@ -123,7 +119,7 @@ bool Stream::testConnection(PaDeviceIndex i, StreamType streamType) {
         params.sampleFormat = paFloat32;
 
         PaStream* testStream = nullptr;
-        PaError err;
+        PaError err = NULL;
         if (streamType == INPUT) {
             params.suggestedLatency = Pa_GetDeviceInfo(i)->defaultLowInputLatency;
             err = Pa_OpenStream(
@@ -191,7 +187,7 @@ PaStreamParameters Stream::setupStreamParameters(StreamType streamType, bool use
         inputParams.device = getDevice(streamType, useDefault);
         inputParams.channelCount = 1;
         inputParams.sampleFormat = paFloat32;
-        inputParams.suggestedLatency = Pa_GetDeviceInfo(inputParams.device)->defaultLowInputLatency;
+        inputParams.suggestedLatency = (streamType == INPUT) ? Pa_GetDeviceInfo(inputParams.device)->defaultLowInputLatency : Pa_GetDeviceInfo(inputParams.device)->defaultLowOutputLatency;
         inputParams.hostApiSpecificStreamInfo = nullptr;
 
         return inputParams;

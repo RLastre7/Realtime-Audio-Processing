@@ -25,7 +25,7 @@ struct EffectParameters {
 
     //parameters users dont need to see
     std::atomic<float> currentVolume;
-    std::atomic<int> sampleRate;
+    std::atomic<double> sampleRate;
     std::atomic<size_t> delaySamples;
     
 

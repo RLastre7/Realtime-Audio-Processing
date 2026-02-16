@@ -21,8 +21,8 @@ struct AudioState {
     PaDeviceIndex inputDevice;
     PaDeviceIndex outputDevice;
 
-    inline AudioState(const size_t buffSize, const size_t windSize, PaDeviceIndex in, PaDeviceIndex out) {
-        ringBuffer.buffer.resize(buffSize);
+    inline AudioState(const double buffSize, const size_t windSize, PaDeviceIndex in, PaDeviceIndex out) {
+        ringBuffer.buffer.resize(static_cast<size_t>(buffSize));
         windowSize = windSize;
         effectParams.sampleRate = buffSize;
         inputDevice = in;

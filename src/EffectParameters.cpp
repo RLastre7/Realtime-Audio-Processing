@@ -9,8 +9,8 @@
 
 static std::string getCalculatedParams(const EffectParameters& ep) {
     std::ostringstream oss;
-    float delaySeconds = static_cast<float>(ep.delaySamples.load(std::memory_order_relaxed)) / ep.sampleRate.load(std::memory_order_relaxed);
-    float delayMs = delaySeconds * 1000;
+    double delaySeconds = static_cast<double>(ep.delaySamples.load(std::memory_order_relaxed)) / ep.sampleRate.load(std::memory_order_relaxed);
+    double delayMs = delaySeconds * 1000;
     oss << std::fixed << std::setprecision(0) << "delay:" << delayMs << "ms\n";
     return oss.str();
 }

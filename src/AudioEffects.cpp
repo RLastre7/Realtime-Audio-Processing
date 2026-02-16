@@ -4,7 +4,7 @@
 //get volume
 float AudioEffects::getRMS(const float* data, unsigned long size) {
     float sum = 0.0f;
-    for (auto i = 0; i < size; i++) {
+    for (unsigned long i = 0; i < size; i++) {
         sum += data[i] * data[i];
     }
     return sqrt(sum / size);

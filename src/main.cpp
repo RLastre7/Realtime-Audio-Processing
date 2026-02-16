@@ -32,7 +32,8 @@ int main() {
     PaStreamParameters inputParams = Stream::setupStreamParameters(INPUT,false);
     PaStreamParameters outputParams = Stream::setupStreamParameters(OUTPUT,true);
 
-    int sampleRate = Pa_GetDeviceInfo(inputParams.device)->defaultSampleRate;
+    /*double sampleRate = Pa_GetDeviceInfo(inputParams.device)->defaultSampleRate;*/
+    double sampleRate = 48000;
     int framesPerBuffer = 64;
 
     PaStream* stream = nullptr;
