@@ -7,7 +7,7 @@ float AudioEffects::getRMS(const float* data, unsigned long size) {
     for (unsigned long i = 0; i < size; i++) {
         sum += data[i] * data[i];
     }
-    return sqrt(sum / size);
+    return std::sqrt(sum / size);
 }
 
 //set volume
@@ -22,7 +22,7 @@ void AudioEffects::overdrive(float& data, float drive) {
     data /= std::tanh(drive);
 }
 
-void AudioEffects::delay(float& data, int delaySamples, RingBuffer& buffer, float wet, float feedback = 0.5f) {
+void AudioEffects::delay(float& data, int delaySamples, RingBuffer& buffer, float wet, float feedback) {
     float delayed = buffer.getRelativeToHead(-delaySamples); 
     float out = data + delayed * wet;                        
     buffer.push(data + delayed * feedback);                  

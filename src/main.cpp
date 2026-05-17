@@ -36,7 +36,11 @@ int main() {
     snd_lib_error_set_handler(noopAlsaHandler);
 #endif
 
-    Pa_Initialize();
+    PaError err = Pa_Initialize();
+    if (err != paNoError) {
+        std::cerr << "Failed to initialize PortAudio: " << Pa_GetErrorText(err) << std::endl;
+        return 1;
+    }
 
     PaStreamParameters inputParams = Stream::setupStreamParameters(INPUT,false);
     PaStreamParameters outputParams = Stream::setupStreamParameters(OUTPUT,true);
@@ -49,8 +53,20 @@ int main() {
     AudioState audioState(sampleRate,framesPerBuffer,inputParams.device,outputParams.device);
 
 
-    Pa_OpenStream(&stream, &inputParams, &outputParams, sampleRate, framesPerBuffer, paNoFlag, Stream::callback, &audioState);
-    Pa_StartStream(stream);  
+    err = Pa_OpenStream(&stream, &inputParams, &outputParams, sampleRate, framesPerBuffer, paNoFlag, Stream::callback, &audioState);
+    if (err != paNoError) {
+        std::cerr << "Failed to open stream: " << Pa_GetErrorText(err) << std::endl;
+        Pa_Terminate();
+        return 1;
+    }
+
+    err = Pa_StartStream(stream);
+    if (err != paNoError) {
+        std::cerr << "Failed to start stream: " << Pa_GetErrorText(err) << std::endl;
+        Pa_CloseStream(stream);
+        Pa_Terminate();
+        return 1;
+    }
 
     std::thread uiThread(UserInterface::UILoop, std::ref(audioState));
 

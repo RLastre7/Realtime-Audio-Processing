@@ -94,7 +94,7 @@ int Stream::callback(
 std::unordered_set<PaDeviceIndex> Stream::enumerateDevices(StreamType streamType) {
         std::unordered_set<PaDeviceIndex> set;
 
-        std::string streamTypeString = (streamType == INPUT) ? "\n\nInput " : "\n\nOuput ";
+        std::string streamTypeString = (streamType == INPUT) ? "\n\nInput " : "\n\nOutput ";
         std::cout << streamTypeString << "Devices:" << std::endl;
 
         for (auto i = 0; i < Pa_GetDeviceCount(); i++) {
@@ -151,10 +151,10 @@ bool Stream::testConnection(PaDeviceIndex i, StreamType streamType) {
         //test device connected
         if (err == paNoError) {
             Pa_CloseStream(testStream);
-            std::cout << "Connection Succesful" << std::endl;
+            std::cout << "Connection Successful" << std::endl;
             return true;
         }
-        std::cout << "Connection unsuccesful:" << err << std::endl;
+        std::cout << "Connection unsuccessful:" << err << std::endl;
 
         return false;
     }

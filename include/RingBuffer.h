@@ -4,8 +4,6 @@ struct RingBuffer {
     std::vector<float> buffer;
     size_t writeIndex = 0;
 
-    RingBuffer() = default;
-
     RingBuffer(size_t n);
 
     //handles wrapping when indexing, allows writing

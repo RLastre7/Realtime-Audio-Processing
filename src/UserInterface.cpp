@@ -1,6 +1,5 @@
 #include "UserInterface.h"
 #include "AudioEffects.h"
-#include "AudioEffects.h"
 #include <chrono>
 #include <thread>
 #include <cmath>
@@ -184,7 +183,7 @@ void UserInterface::printData(AudioState& audioState) {
 
     displayEffectFlags(audioState);
 
-    std::cout << std::fixed << std::setprecision(10) << "Proccessing Time: " << audioState.processTime.load(std::memory_order_relaxed) << std::endl;
+    std::cout << std::fixed << std::setprecision(10) << "Processing Time: " << audioState.processTime.load(std::memory_order_relaxed) << std::endl;
     
     displayDevices(audioState);
 

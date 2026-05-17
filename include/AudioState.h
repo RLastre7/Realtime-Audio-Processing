@@ -1,30 +1,30 @@
 #pragma once
 #include "portaudio.h"
 #include <atomic>
+#include <cstdint>
 #include <vector>
 #include "RingBuffer.h"
 #include "AudioMode.h"
 #include "EffectParameters.h"
 #include <chrono>
 
-using std::atomic;
 struct AudioState {
     RingBuffer ringBuffer;
     EffectParameters effectParams;
     std::vector<float> recordingHistory;
     size_t windowSize;
-    atomic<size_t> playbackIndex = 0;
-    atomic<AudioMode> audioMode = AudioMode::Idle; 
-    atomic<bool> appRunning = true;
-    atomic<int> sampleRate;
-    atomic<int64_t> processTime;
+    std::atomic<size_t> playbackIndex = 0;
+    std::atomic<AudioMode> audioMode = AudioMode::Idle; 
+    std::atomic<bool> appRunning = true;
+    std::atomic<int> sampleRate;
+    std::atomic<int64_t> processTime;
     PaDeviceIndex inputDevice;
     PaDeviceIndex outputDevice;
 
-    inline AudioState(const double buffSize, const size_t windSize, PaDeviceIndex in, PaDeviceIndex out) {
-        ringBuffer.buffer.resize(static_cast<size_t>(buffSize));
+    inline AudioState(const double sampleRate_, const size_t windSize, PaDeviceIndex in, PaDeviceIndex out)
+        : ringBuffer(static_cast<size_t>(sampleRate_)) {
         windowSize = windSize;
-        effectParams.sampleRate = buffSize;
+        effectParams.sampleRate = static_cast<int>(sampleRate_);
         inputDevice = in;
         outputDevice = out;
     }
