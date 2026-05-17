@@ -69,6 +69,8 @@ cmake --build build
 
 WSL2 with WSLg provides a PulseAudio server that bridges audio to Windows. PortAudio uses ALSA on Linux, so the ALSA PulseAudio plugin is required.
 
+> **Latency warning:** audio on WSL goes through multiple layers (ALSA → PulseAudio → WSLg → Windows driver), adding 50–200ms+ of latency. This is fine for development and testing logic/effects, but **not suitable for real-time audio monitoring**. Use the native Windows build for low-latency audio.
+
 1. **Install dependencies:**
 
 ```sh
