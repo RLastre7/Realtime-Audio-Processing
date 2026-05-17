@@ -25,43 +25,82 @@ Allows users to process audio in real-time using custom effects implemented in C
 
 ---
 
-## Getting Started (Windows)
+## Getting Started
+
+### Linux
 
 1. **Clone the repository:**
 
+```sh
 git clone https://github.com/RLastre7/Realtime-Audio-Processing.git
-
 cd Realtime-Audio-Processing
+```
+
+2. **Install PortAudio:**
+
+Option A — system package (recommended):
+```sh
+sudo apt install portaudio19-dev cmake g++    # Debian/Ubuntu
+sudo dnf install portaudio-devel cmake g++    # Fedora
+sudo pacman -S portaudio cmake gcc            # Arch
+```
+
+Option B — via vcpkg:
+```sh
+./vcpkg install portaudio:x64-linux
+```
+
+3. **Configure and build:**
+
+```sh
+cmake -B build -S .
+cmake --build build
+```
+
+4. **Run:**
+
+```sh
+./build/RealtimeAudio
+```
 
 ---
 
-# 2. **Install PortAudio via vcpkg (one-time per machine):**
+### Windows
 
- In your vcpkg folder
- 
+1. **Clone the repository:**
+
+```sh
+git clone https://github.com/RLastre7/Realtime-Audio-Processing.git
+cd Realtime-Audio-Processing
+```
+
+2. **Install PortAudio via vcpkg (one-time per machine):**
+
+In your vcpkg folder:
+```sh
 .\bootstrap-vcpkg.bat
-
 .\vcpkg install portaudio[asio]:x64-windows
+```
 
----
+3. **Configure the project with CMake:**
 
-# 3. **Configure the project with CMake:**
-
+```sh
 cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="C:/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
+```
 
 > Replace the path with your local vcpkg location.
 
----
+4. **Build the project:**
 
-# 4. **Build the project:**
-
+```sh
 cmake --build build --config Release
+```
 
----
+5. **Run the executable:**
 
-# 5. **Run the executable:**
-
+```sh
 .\build\Release\RealtimeAudio.exe
+```
 
 ---
 

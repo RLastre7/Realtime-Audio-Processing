@@ -177,7 +177,11 @@ PaDeviceIndex Stream::getDevice(StreamType streamType, bool useDefault) {
             //if picked a device then try to open the stream
             isValidDevice = testConnection(i, streamType);
         }
+#ifdef _WIN32
         system("cls");
+#else
+        system("clear");
+#endif
         return i;
     }
 

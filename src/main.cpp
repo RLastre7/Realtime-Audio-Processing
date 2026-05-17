@@ -3,7 +3,6 @@
 
 //io
 #include <iostream>
-#include <conio.h>
 
 //other includes
 #include <vector>
