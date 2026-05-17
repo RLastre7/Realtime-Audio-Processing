@@ -9,7 +9,7 @@ float& RingBuffer::operator[](size_t i) {
 }
 
 //handles wrapping for indexing, read only
-const float RingBuffer::operator[](size_t i) const {
+float RingBuffer::operator[](size_t i) const {
     i = i % buffer.size();
     return buffer[i];
 }

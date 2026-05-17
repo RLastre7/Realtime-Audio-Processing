@@ -209,8 +209,8 @@ void UserInterface::UILoop(AudioState& audioState) {
 
 
         //read user input
-        if (_kbhit()) {
-            c = _getch();
+        if (kbhit()) {
+            c = getch();
 
             handleInput(c, audioState);
         }

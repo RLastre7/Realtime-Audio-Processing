@@ -4,6 +4,7 @@
 #include "portaudio.h"
 #include <unordered_set>
 #include <chrono>
+#include <limits>
 
 
 void Stream::recordInput(AudioState* audioState, unsigned long framesPerBuffer, const  float* input, float* output) {
@@ -119,7 +120,7 @@ bool Stream::testConnection(PaDeviceIndex i, StreamType streamType) {
         params.sampleFormat = paFloat32;
 
         PaStream* testStream = nullptr;
-        PaError err = NULL;
+        PaError err = paNoError;
         if (streamType == INPUT) {
             params.suggestedLatency = Pa_GetDeviceInfo(i)->defaultLowInputLatency;
             err = Pa_OpenStream(
@@ -169,7 +170,16 @@ PaDeviceIndex Stream::getDevice(StreamType streamType, bool useDefault) {
         std::unordered_set<int> inputDevices = enumerateDevices(streamType);
         while (inputDevices.find(i) == inputDevices.end() || !isValidDevice) {
             std::cout << "\nSelect a device:";
-            std::cin >> i;
+            if (!(std::cin >> i)) {
+                if (std::cin.eof()) {
+                    std::cout << "no input available, using default" << std::endl;
+                    return (streamType == INPUT) ? Pa_GetDefaultInputDevice() : Pa_GetDefaultOutputDevice();
+                }
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout << "invalid input" << std::endl;
+                continue;
+            }
             if (inputDevices.find(i) == inputDevices.end()) {
                 std::cout << "invalid device" << std::endl;
                 continue;

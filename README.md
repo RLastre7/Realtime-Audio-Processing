@@ -65,6 +65,35 @@ cmake --build build
 
 ---
 
+### WSL (Windows Subsystem for Linux)
+
+WSL2 with WSLg provides a PulseAudio server that bridges audio to Windows. PortAudio uses ALSA on Linux, so the ALSA PulseAudio plugin is required.
+
+1. **Install dependencies:**
+
+```sh
+sudo apt install portaudio19-dev cmake g++ libasound2-plugins pulseaudio-utils
+```
+
+2. **Configure ALSA to use PulseAudio:**
+
+```sh
+cat > ~/.asoundrc << 'EOF'
+pcm.!default pulse
+ctl.!default pulse
+EOF
+```
+
+3. **Build and run** (same as Linux):
+
+```sh
+cmake -B build -S .
+cmake --build build
+./build/RealtimeAudio
+```
+
+---
+
 ### Windows
 
 1. **Clone the repository:**

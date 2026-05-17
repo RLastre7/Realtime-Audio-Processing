@@ -11,7 +11,7 @@ struct RingBuffer {
     //handles wrapping when indexing, allows writing
     float& operator[](size_t i);
     //handles wrapping for indexing, read only
-    const float operator[](size_t i) const;
+    float operator[](size_t i) const;
 
     //get a value from an offset relative to the head
     float getRelativeToHead(int offset) const;

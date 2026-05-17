@@ -14,7 +14,7 @@ if(NOT portaudio_FOUND)
     pkg_check_modules(PORTAUDIO REQUIRED portaudio-2.0)
     add_library(portaudio INTERFACE IMPORTED)
     target_include_directories(portaudio INTERFACE ${PORTAUDIO_INCLUDE_DIRS})
-    target_link_libraries(portaudio INTERFACE ${PORTAUDIO_LIBRARIES})
+    target_link_libraries(portaudio INTERFACE ${PORTAUDIO_LDFLAGS})
 endif()
 
 # Add executable
@@ -31,6 +31,7 @@ add_executable(RealtimeAudio
 target_include_directories(RealtimeAudio
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # Link PortAudio

@@ -1,5 +1,8 @@
 ﻿//port audio
 #include "portaudio.h"
+#ifdef __linux__
+#include <alsa/asoundlib.h>
+#endif
 
 //io
 #include <iostream>
@@ -23,8 +26,15 @@
 
 
 
+#ifdef __linux__
+static void noopAlsaHandler(const char*, int, const char*, int, const char*, ...) {}
+#endif
+
 int main() {
 
+#ifdef __linux__
+    snd_lib_error_set_handler(noopAlsaHandler);
+#endif
 
     Pa_Initialize();
 
