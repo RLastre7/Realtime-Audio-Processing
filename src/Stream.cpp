@@ -2,9 +2,7 @@
 #include "AudioState.h"
 #include "AudioEffects.h"
 #include "portaudio.h"
-#include <unordered_set>
 #include <chrono>
-#include <limits>
 
 
 void Stream::recordInput(AudioState* audioState, unsigned long framesPerBuffer, const  float* input, float* output) {
@@ -90,109 +88,8 @@ int Stream::callback(
     }
 
 
-//returns all the input devices indexes in a set
-std::unordered_set<PaDeviceIndex> Stream::enumerateDevices(StreamType streamType) {
-        std::unordered_set<PaDeviceIndex> set;
-
-        std::string streamTypeString = (streamType == INPUT) ? "\n\nInput " : "\n\nOutput ";
-        std::cout << streamTypeString << "Devices:" << std::endl;
-
-        for (auto i = 0; i < Pa_GetDeviceCount(); i++) {
-            const PaDeviceInfo* device = Pa_GetDeviceInfo(i);
-            if (streamType == INPUT && device->maxInputChannels > 0) {
-                set.insert(i);
-                std::cout << i << ":" << device->name << " -> " << Pa_GetHostApiInfo(device->hostApi)->name << std::endl;
-            }
-            if (streamType == OUTPUT && device->maxOutputChannels > 0) {
-                set.insert(i);
-                std::cout << i << ":" << device->name << " -> " << Pa_GetHostApiInfo(device->hostApi)->name << std::endl;
-            }
-
-        }
-        return set;
-    }
-
-//test connection to ensure a device is valid
-bool Stream::testConnection(PaDeviceIndex i, StreamType streamType) {
-        PaStreamParameters params{};
-        params.device = i;
-        params.channelCount = 1;
-        params.sampleFormat = paFloat32;
-
-        PaStream* testStream = nullptr;
-        PaError err = paNoError;
-        if (streamType == INPUT) {
-            params.suggestedLatency = Pa_GetDeviceInfo(i)->defaultLowInputLatency;
-            err = Pa_OpenStream(
-                &testStream,
-                &params,
-                nullptr,
-                Pa_GetDeviceInfo(i)->defaultSampleRate,
-                256,
-                paNoFlag,
-                nullptr,
-                nullptr
-            );
-        }
-        if (streamType == OUTPUT) {
-            params.suggestedLatency = Pa_GetDeviceInfo(i)->defaultLowOutputLatency;
-            err = Pa_OpenStream(
-                &testStream,
-                nullptr,
-                &params,
-                Pa_GetDeviceInfo(i)->defaultSampleRate,
-                256,
-                paNoFlag,
-                nullptr,
-                nullptr
-            );
-        }
-
-        //test device connected
-        if (err == paNoError) {
-            Pa_CloseStream(testStream);
-            std::cout << "Connection Successful" << std::endl;
-            return true;
-        }
-        std::cout << "Connection unsuccessful:" << err << std::endl;
-
-        return false;
-    }
-
-//lets user select device or picks default
-PaDeviceIndex Stream::getDevice(StreamType streamType, bool useDefault) {
-        int i = -1;
-        bool isValidDevice = false;
-
-        if (useDefault && streamType == INPUT) return  Pa_GetDefaultInputDevice();
-        if (useDefault && streamType == OUTPUT) return Pa_GetDefaultOutputDevice();
-
-        std::unordered_set<int> inputDevices = enumerateDevices(streamType);
-        while (inputDevices.find(i) == inputDevices.end() || !isValidDevice) {
-            std::cout << "\nSelect a device:";
-            if (!(std::cin >> i)) {
-                if (std::cin.eof()) {
-                    std::cout << "no input available, using default" << std::endl;
-                    return (streamType == INPUT) ? Pa_GetDefaultInputDevice() : Pa_GetDefaultOutputDevice();
-                }
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                std::cout << "invalid input" << std::endl;
-                continue;
-            }
-            if (inputDevices.find(i) == inputDevices.end()) {
-                std::cout << "invalid device" << std::endl;
-                continue;
-            }
-            //if picked a device then try to open the stream
-            isValidDevice = testConnection(i, streamType);
-        }
-#ifdef _WIN32
-        system("cls");
-#else
-        system("clear");
-#endif
-        return i;
+PaDeviceIndex Stream::getDevice(StreamType streamType, bool) {
+        return (streamType == INPUT) ? Pa_GetDefaultInputDevice() : Pa_GetDefaultOutputDevice();
     }
 
 //set up stream parameters

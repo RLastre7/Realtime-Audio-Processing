@@ -12,7 +12,6 @@
 #include <chrono>
 #include <thread>
 #include <atomic>
-#include <unordered_set>
 #include <fstream>
 
 
@@ -42,16 +41,14 @@ int main() {
         return 1;
     }
 
-    PaStreamParameters inputParams = Stream::setupStreamParameters(INPUT,false);
-    PaStreamParameters outputParams = Stream::setupStreamParameters(OUTPUT,true);
+    PaStreamParameters inputParams = Stream::setupStreamParameters(INPUT, true);
+    PaStreamParameters outputParams = Stream::setupStreamParameters(OUTPUT, true);
 
-    /*double sampleRate = Pa_GetDeviceInfo(inputParams.device)->defaultSampleRate;*/
     double sampleRate = 48000;
     int framesPerBuffer = 64;
 
     PaStream* stream = nullptr;
-    AudioState audioState(sampleRate,framesPerBuffer,inputParams.device,outputParams.device);
-
+    AudioState audioState(sampleRate, framesPerBuffer, inputParams.device, outputParams.device);
 
     err = Pa_OpenStream(&stream, &inputParams, &outputParams, sampleRate, framesPerBuffer, paNoFlag, Stream::callback, &audioState);
     if (err != paNoError) {
@@ -69,6 +66,33 @@ int main() {
     }
 
     std::thread uiThread(UserInterface::UILoop, std::ref(audioState));
+
+    while (audioState.appRunning.load(std::memory_order_relaxed)) {
+        if (audioState.deviceChangeRequested.exchange(false, std::memory_order_relaxed)) {
+            Pa_StopStream(stream);
+            Pa_CloseStream(stream);
+
+            PaDeviceIndex newInput = audioState.targetInputDevice.load(std::memory_order_relaxed);
+            PaDeviceIndex newOutput = audioState.targetOutputDevice.load(std::memory_order_relaxed);
+
+            if (newInput >= 0) {
+                audioState.inputDevice = newInput;
+                inputParams.device = newInput;
+                inputParams.suggestedLatency = Pa_GetDeviceInfo(newInput)->defaultLowInputLatency;
+            }
+            if (newOutput >= 0) {
+                audioState.outputDevice = newOutput;
+                outputParams.device = newOutput;
+                outputParams.suggestedLatency = Pa_GetDeviceInfo(newOutput)->defaultLowOutputLatency;
+            }
+
+            err = Pa_OpenStream(&stream, &inputParams, &outputParams, sampleRate, framesPerBuffer, paNoFlag, Stream::callback, &audioState);
+            if (err == paNoError) {
+                Pa_StartStream(stream);
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
 
     uiThread.join();
 
