@@ -1,7 +1,7 @@
 # Realtime Audio Processing
 
-A real-time audio processing application written in C++ using **PortAudio**.  
-This project demonstrates low-latency audio streaming, custom audio effects, and user interaction via the command line.
+A real-time audio processing application written in C++ using **PortAudio** and **Dear ImGui**.  
+This project demonstrates low-latency audio streaming, custom audio effects, and device/effect control through a graphical interface.
 
 ---
 
@@ -11,7 +11,9 @@ Allows users to process audio in real-time using custom effects implemented in C
 
 ### Features
 - Real-time audio input/output using PortAudio
-- Custom audio effects engine
+- Custom audio effects engine (Gain, Overdrive, Fuzz, Delay)
+- Graphical UI for controlling effects and selecting audio devices
+- Live playback, recording, and loop modes
 - Modular design: separate classes for audio processing, streaming, and user interface
 
 ---
@@ -20,8 +22,9 @@ Allows users to process audio in real-time using custom effects implemented in C
 
 - C++20 compiler
 - [CMake](https://cmake.org/)
-- [vcpkg](https://github.com/microsoft/vcpkg)
-- [PortAudio](http://www.portaudio.com/) (installed via vcpkg)
+- [vcpkg](https://github.com/microsoft/vcpkg) (optional — see platform guides)
+- [PortAudio](http://www.portaudio.com/)
+- [OpenGL](https://www.opengl.org/) (system GL library; GLFW and Dear ImGui are fetched automatically by CMake)
 
 ---
 
@@ -40,9 +43,9 @@ cd Realtime-Audio-Processing
 
 Option A — system package (recommended):
 ```sh
-sudo apt install portaudio19-dev cmake g++    # Debian/Ubuntu
-sudo dnf install portaudio-devel cmake g++    # Fedora
-sudo pacman -S portaudio cmake gcc            # Arch
+sudo apt install portaudio19-dev cmake g++ libgl-dev     # Debian/Ubuntu
+sudo dnf install portaudio-devel cmake g++ mesa-libGL-devel    # Fedora
+sudo pacman -S portaudio cmake gcc mesa             # Arch
 ```
 
 Option B — via vcpkg:
@@ -74,7 +77,7 @@ WSL2 with WSLg provides a PulseAudio server that bridges audio to Windows. PortA
 1. **Install dependencies:**
 
 ```sh
-sudo apt install portaudio19-dev cmake g++ libasound2-plugins pulseaudio-utils
+sudo apt install portaudio19-dev cmake g++ libgl-dev libasound2-plugins pulseaudio-utils
 ```
 
 2. **Configure ALSA to use PulseAudio:**
